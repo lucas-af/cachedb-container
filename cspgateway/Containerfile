@@ -1,0 +1,26 @@
+FROM httpd:2.4
+MAINTAINER Lucas AF
+
+ARG CSPSYSTEM_PASSWORD
+
+ENV CSPSYSTEM_PASSWORD=${CSPSYSTEM_PASSWORD:-SYS}
+
+# Add and extract CSPGateway package
+ADD CSPGateway-*.tar.gz /tmp/isckit
+
+# Run install
+RUN bash -c '/tmp/isckit/CSPGateway-*/install/CSPinstall < <(echo -e "lnxubuntux64\n2\n\n\n\n\n\n\n\n\n")'
+
+# Copy CSP.ini
+COPY --chown=www-data:root --chmod=600 ./CSP.ini /opt/cspgateway/bin/
+
+# Copy cspgateway.conf
+COPY --chown=root:root --chmod=644 ./cspgateway.conf /usr/local/apache2/conf/extra/
+
+# Apply cspgateway.conf
+RUN echo 'Include conf/extra/cspgateway.conf' >> /usr/local/apache2/conf/httpd.conf
+
+# Change password
+RUN sed -Ei "s/Password=.*/Password=${CSPSYSTEM_PASSWORD}/" /opt/cspgateway/bin/CSP.ini
+
+COPY --chown=root:root --chmod=555 update_cspini.sh /usr/local/bin/
