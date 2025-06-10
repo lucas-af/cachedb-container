@@ -1,0 +1,36 @@
+services:
+  cachedb:    
+    image: isc/cachedb:latest
+    build:
+      context: ./cache
+      dockerfile: ./Containerfile
+    container_name: cachedb
+    hostname: cache    
+    networks:
+      - cache-network
+    ports:
+      - "1972:1972"    
+    secrets:
+      - cache-key
+
+  cspgateway:
+    image: isc/cspgateway:latest
+    build:
+      context: ./cspgateway
+      dockerfile: ./Containerfile
+    depends_on:
+      - cachedb
+    container_name: cspgateway
+    hostname: cspgateway
+    networks:
+      - cache-network
+    ports:
+      - "8080:80"
+      
+networks:
+  cache-network:
+    driver: bridge
+
+secrets:
+  cache-key:
+    external: true

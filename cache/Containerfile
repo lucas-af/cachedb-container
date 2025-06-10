@@ -1,0 +1,65 @@
+FROM fedora:latest
+MAINTAINER Lucas AF
+
+ARG SYSTEM_PASSWORD
+ARG CSPSYSTEM_PASSWORD
+
+ENV SYSTEM_PASSWORD=${SYSTEM_PASSWORD:-SYS}
+ENV CSPSYSTEM_PASSWORD=${CSPSYSTEM_PASSWORD:-SYS}
+
+# Update and install dependency
+RUN dnf -y update && dnf install -y net-tools which coreutils zlib openssl-libs initscripts libnsl gcc python3 python3-devel hostname
+
+# Create cache management user
+RUN useradd -c 'ISC Cache Database Manager' cache
+
+# Create install directory
+RUN mkdir -vp -m=777 /tmp/cachekit
+
+# Add and extract cache package
+ADD cache-*.tar.gz /tmp/cachekit
+
+# Copy manifest file
+COPY --chown=cache:cache --chmod=666 ManifestInstall.cls /tmp/cachekit/
+
+# Change to /tmp
+WORKDIR /tmp/cachekit
+
+# Configuration
+ENV ISC_PACKAGE_INSTANCENAME="CACHE" \
+    ISC_PACKAGE_PLATFORM="lnxrhx64" \
+    ISC_PACKAGE_INSTALLDIR="/opt/isc/cache" \
+    ISC_PACKAGE_UNICODE="Y" \
+    ISC_PACKAGE_INITIAL_SECURITY="Locked Down" \
+    ISC_PACKAGE_USER_PASSWORD=$SYSTEM_PASSWORD \
+    ISC_PACKAGE_CSPSYSTEM_PASSWORD=$CSPSYSTEM_PASSWORD \
+    ISC_PACKAGE_MGRUSER="cache" \
+    ISC_PACKAGE_MGRGROUP="cache" \
+    ISC_PACKAGE_STARTCACHE="N" \
+    ISC_INSTALLER_MANIFEST="/tmp/cachekit/ManifestInstall.cls" \
+    ISC_INSTALLER_PARAMETERS="" \    
+    ISC_INSTALLER_LOGFILE="/tmp/cachekit/install-cache.log" \
+    ISC_INSTALLER_LOGLEVEL="1" \
+    ISC_PACKAGE_DOCBOOK_DATABASE="N" \
+    ISC_PACKAGE_SAMPLES_DATABASE="N"
+
+# Run install
+RUN ./cache-*/cinstall_silent
+
+# Change installation directory owner
+RUN chown -v cache:cacheusr /opt/isc
+
+# Cache default port
+EXPOSE 1972
+
+# Container user
+USER cache
+
+# Change to home
+WORKDIR /home/cache
+
+# Script to prepare and start Caché
+COPY --chown=root:root --chmod=555 entrypoint.sh /usr/local/bin/
+ENTRYPOINT ["entrypoint.sh"]
+
+CMD ["/usr/bin/tail", "-f", "/opt/isc/cache/mgr/cconsole.log"]
