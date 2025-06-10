@@ -9,12 +9,12 @@ Example:
 
 ```
 ├── cache
-│   ├── cache-201x.x.x.xxx.x.xxxxx-lnxrhx64.tar.gz
+--> ├── cache-201x.x.x.xxx.x.xxxxx-lnxrhx64.tar.gz
 │   ├── Containerfile
 │   ├── entrypoint.sh
 │   └── ManifestInstall.cls
 ├── cspgateway
-│   ├── CSPGateway-201x.x.x.xxx.x-lnxubuntux64.tar.gz
+--> ├── CSPGateway-201x.x.x.xxx.x-lnxubuntux64.tar.gz
 │   ├── Containerfile
 │   ├── cspgateway.conf
 │   └── CSP.ini
